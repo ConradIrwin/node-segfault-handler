@@ -1,8 +1,9 @@
 {
-  "name": "segfault-handler",
+  "name": "segfault",
   "description": "catches SIGSEGV and prints diagnostic information",
-  "version": "0.2.4",
-  "author": "Dave Dopson <ddopson@gmail.com>",
+  "version": "0.3.0",
+  "author": "Conrad Irwin <conrad@bugsnag.com>",
+  "repository": "https://github.com/ConradIrwin/node-segfault-handler",
   "contributors": [
     "Dave Dopson <ddopson@gmail.com>",
     "Mark Smith <msmith@rallydev.com>",

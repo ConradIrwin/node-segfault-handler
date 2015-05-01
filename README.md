@@ -1,16 +1,17 @@
 # Overview
 
-This module is a critical tool for debugging Node.js C/C++ native code modules, and is safe to use in production environments.  Normally, when a bug is triggered in native code, the node process simply ends with no helpful information.  In production, this can manifest as worker processes restarting for seemingly no reason.  Running node in gdb is messy and infeasible for a production environment.  Instead this module will sit unobtrusively doing nothing (zero perf impact) as long as Node is well-behaved.  If a SIGSEGV signal is raised, the module will print a native stack trace to both STDERR and to a timestamped file (STDERR is usually ignored in production environments.  files are better).
+This module catches segfaults and sigaborts. It's useful for debugging native Node.js C/C++ code, and is safe to use in a production environment.
 
-Using the module is as simple as:
+Normally when a C program crashes, the only way to tell is to examine /var/log/syslog at the time of the crash, with this addons installed it writes
+a report to the filesystem and to STDERR.
 
 ```javascript
 
-var SegfaultHandler = require('segfault-handler');
+var Segfault = require('segfault');
 
-SegfaultHandler.registerHandler("/path/to/");
+Segfault.registerHandler("/path/to/write/segfaults");
 
-SegfaultHandler.causeSegfault(); // simulates a buggy native module that dereferences NULL
+Segfault.causeSegfault(); // simulates a buggy native module that dereferences NULL
 
 ```
 
@@ -32,7 +33,15 @@ Now you can start debugging using tools like "objdump -dS module.node" to try an
 
 Cheers, enjoy.  And happy hunting.
 
+# Installing
+
+```
+npm install segfault --save
+```
+
 # License
+
+This is a slight modification of the [node-segfault-handler](https://github.com/ddopson/node-segfault-handler) code, thanks Dave!.
 
 This software is licensed for use under the [WTFPL](http://en.wikipedia.org/wiki/WTFPL); version 2 if it's a lawyer asking.  Though if you make good use of this or any of my other tools, I'd appreciate an email letting me know what you used it for or how you stumbled across it.
 

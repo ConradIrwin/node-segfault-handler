@@ -20,6 +20,8 @@ using namespace node;
 
 #define STDERR_FD 2
 
+static char *dir = NULL;
+
 static void segfault_handler(int sig, siginfo_t *si, void *unused) {
   void    *array[32]; // Array to store backtrace symbols
   size_t  size;       // To store the size of the stack backtrace
@@ -28,16 +30,26 @@ static void segfault_handler(int sig, siginfo_t *si, void *unused) {
   int     fd;
   time_t  now;
   int     pid;
+  const char * signame;
+
+
+  if (sig == SIGSEGV) {
+    signame = "SIGSEGV\0";
+  } else if (sig == SIGABRT) {
+    signame = "SIGABRT\0";
+  } else {
+    signame = "UNKNOWN\0";
+  }
 
   // Construct a filename
   time(&now);
   pid = getpid();
-  snprintf(sbuff, sizeof(sbuff), "stacktrace-%d-%d.log", (int)now, pid );
+  snprintf(sbuff, sizeof(sbuff), "%s/stacktrace-%d-%d.log", dir, (int)now, pid );
 
   // Open the File
   fd = open(sbuff, O_CREAT | O_APPEND | O_WRONLY, S_IRUSR | S_IRGRP | S_IROTH);
   // Write the header line
-  n = snprintf(sbuff, sizeof(sbuff), "PID %d received SIGSEGV for address: 0x%lx\n", pid, (long) si->si_addr);
+  n = snprintf(sbuff, sizeof(sbuff), "PID %d received %s for address: 0x%lx\n", pid, signame, (long) si->si_addr);
   if(fd > 0) write(fd, sbuff, n);
   write(STDERR_FD, sbuff, n);
 
@@ -82,14 +94,34 @@ NAN_METHOD(CauseSegfault) {
   NanReturnUndefined();  // this line never runs
 }
 
-NAN_METHOD(RegisterHandler) {
+NAN_METHOD(CauseAbort) {
   NanScope();
+  assert(dir == NULL);
+  NanReturnUndefined();  // this line never runs
+}
+
+NAN_METHOD(RegisterHandler) {
+
+  NanUtf8String *str;
+
+  NanScope();
+
+  dir = (char *)malloc(64); /* never freed, used by sigaction */
+  str = new NanUtf8String(args[0]);
+  if (str->length() > 0 && str->length() < 64) {
+    char * src = **str;
+    strncpy(dir, src, 64);
+  } else {
+    dir[0] = '.'; dir[1] = '\0';
+  }
+
   struct sigaction sa;
   memset(&sa, 0, sizeof(struct sigaction));
   sigemptyset(&sa.sa_mask);
   sa.sa_sigaction = segfault_handler;
   sa.sa_flags   = SA_SIGINFO;
   sigaction(SIGSEGV, &sa, NULL);
+  sigaction(SIGABRT, &sa, NULL);
   NanReturnUndefined();
 }
 
@@ -97,6 +129,7 @@ extern "C" {
   void init(Handle<Object> target) {
     NODE_SET_METHOD(target, "registerHandler", RegisterHandler);
     NODE_SET_METHOD(target, "causeSegfault", CauseSegfault);
+    NODE_SET_METHOD(target, "causeAbort", CauseAbort);
   }
   NODE_MODULE(segfault_handler, init);
 }

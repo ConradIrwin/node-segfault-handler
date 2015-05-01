@@ -8,7 +8,7 @@ Using the module is as simple as:
 
 var SegfaultHandler = require('segfault-handler');
 
-SegfaultHandler.registerHandler();
+SegfaultHandler.registerHandler("/path/to/");
 
 SegfaultHandler.causeSegfault(); // simulates a buggy native module that dereferences NULL
 
